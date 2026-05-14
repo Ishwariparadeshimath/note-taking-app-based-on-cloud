@@ -1,0 +1,628 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": [],
+      "authorship_tag": "ABX9TyMXGiYsrSBMg94xSrLZ/n1Q",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/Arati-collab/Arati/blob/main/cloud_based_note_taking_app.ipynb\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 1,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "vzNHxLO1mt69",
+        "outputId": "98786f2e-f4df-4026-c4e8-d423591eea72"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Project folders created.\n"
+          ]
+        }
+      ],
+      "source": [
+        "import os\n",
+        "\n",
+        "folders = [\n",
+        "    \"notes-app/app/login\",\n",
+        "    \"notes-app/app/dashboard\",\n",
+        "    \"notes-app/app/note/[id]\",\n",
+        "    \"notes-app/components\",\n",
+        "    \"notes-app/lib\",\n",
+        "    \"notes-app/services\",\n",
+        "]\n",
+        "\n",
+        "for folder in folders:\n",
+        "    os.makedirs(folder, exist_ok=True)\n",
+        "\n",
+        "print(\"Project folders created.\")"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "package_json = \"\"\"\n",
+        "{\n",
+        "  \"name\": \"notes-app\",\n",
+        "  \"version\": \"1.0.0\",\n",
+        "  \"private\": true,\n",
+        "  \"scripts\": {\n",
+        "    \"dev\": \"next dev\",\n",
+        "    \"build\": \"next build\",\n",
+        "    \"start\": \"next start\"\n",
+        "  },\n",
+        "  \"dependencies\": {\n",
+        "    \"firebase\": \"^10.12.2\",\n",
+        "    \"next\": \"14.2.4\",\n",
+        "    \"react\": \"^18\",\n",
+        "    \"react-dom\": \"^18\",\n",
+        "    \"react-markdown\": \"^9.0.1\",\n",
+        "    \"react-firebase-hooks\": \"^5.1.1\"\n",
+        "  }\n",
+        "}\n",
+        "\"\"\"\n",
+        "\n",
+        "with open(\"notes-app/package.json\", \"w\") as f:\n",
+        "    f.write(package_json)\n",
+        "\n",
+        "print(\"package.json created.\")"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "iTNlovL8nKYM",
+        "outputId": "24fe755b-0561-405d-e821-80d337e8df59"
+      },
+      "execution_count": 2,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "package.json created.\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "firebase_ts = \"\"\"\n",
+        "import { initializeApp } from 'firebase/app';\n",
+        "import { getAuth, GoogleAuthProvider } from 'firebase/auth';\n",
+        "import { getFirestore } from 'firebase/firestore';\n",
+        "\n",
+        "const firebaseConfig = {\n",
+        "  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,\n",
+        "  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,\n",
+        "  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,\n",
+        "};\n",
+        "\n",
+        "const app = initializeApp(firebaseConfig);\n",
+        "\n",
+        "export const auth = getAuth(app);\n",
+        "export const provider = new GoogleAuthProvider();\n",
+        "export const db = getFirestore(app);\n",
+        "\"\"\"\n",
+        "\n",
+        "with open(\"notes-app/lib/firebase.ts\", \"w\") as f:\n",
+        "    f.write(firebase_ts)\n",
+        "\n",
+        "print(\"firebase.ts created.\")"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "C3mtd0TKnRqF",
+        "outputId": "d0b23509-beb3-4155-beff-9fb607f4f69d"
+      },
+      "execution_count": 3,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "firebase.ts created.\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "login_page = \"\"\"\n",
+        "'use client';\n",
+        "\n",
+        "import { signInWithPopup } from 'firebase/auth';\n",
+        "import { auth, provider } from '@/lib/firebase';\n",
+        "\n",
+        "export default function LoginPage() {\n",
+        "  const login = async () => {\n",
+        "    await signInWithPopup(auth, provider);\n",
+        "  };\n",
+        "\n",
+        "  return (\n",
+        "    <div className=\"flex h-screen items-center justify-center\">\n",
+        "      <button\n",
+        "        onClick={login}\n",
+        "        className=\"rounded bg-black px-6 py-3 text-white\"\n",
+        "      >\n",
+        "        Sign in with Google\n",
+        "      </button>\n",
+        "    </div>\n",
+        "  );\n",
+        "}\n",
+        "\"\"\"\n",
+        "\n",
+        "with open(\"notes-app/app/login/page.tsx\", \"w\") as f:\n",
+        "    f.write(login_page)\n",
+        "\n",
+        "print(\"Login page created.\")"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "i_9Lc6nenZN4",
+        "outputId": "6253d4c1-e5f4-47e1-8a67-9fdb70982684"
+      },
+      "execution_count": 4,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Login page created.\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "create_note = \"\"\"\n",
+        "import { db } from '@/lib/firebase';\n",
+        "import {\n",
+        "  addDoc,\n",
+        "  collection,\n",
+        "  serverTimestamp,\n",
+        "} from 'firebase/firestore';\n",
+        "\n",
+        "export async function createNote(uid: string) {\n",
+        "  return addDoc(collection(db, `users/${uid}/notes`), {\n",
+        "    title: 'Untitled',\n",
+        "    body: '',\n",
+        "    tags: [],\n",
+        "    shared: false,\n",
+        "    createdAt: serverTimestamp(),\n",
+        "    updatedAt: serverTimestamp(),\n",
+        "  });\n",
+        "}\n",
+        "\"\"\"\n",
+        "\n",
+        "with open(\"notes-app/services/createNote.ts\", \"w\") as f:\n",
+        "    f.write(create_note)\n",
+        "\n",
+        "print(\"createNote.ts created.\")"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "HWISvkQWnhK4",
+        "outputId": "a869cec7-7085-4ace-df12-71bbacbe9d9b"
+      },
+      "execution_count": 5,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "createNote.ts created.\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "update_note = \"\"\"\n",
+        "import { db } from '@/lib/firebase';\n",
+        "import {\n",
+        "  doc,\n",
+        "  updateDoc,\n",
+        "  serverTimestamp,\n",
+        "} from 'firebase/firestore';\n",
+        "\n",
+        "export async function updateNote(uid: string, id: string, data: any) {\n",
+        "  return updateDoc(doc(db, `users/${uid}/notes/${id}`), {\n",
+        "    ...data,\n",
+        "    updatedAt: serverTimestamp(),\n",
+        "  });\n",
+        "}\n",
+        "\"\"\"\n",
+        "\n",
+        "with open(\"notes-app/services/updateNote.ts\", \"w\") as f:\n",
+        "    f.write(update_note)\n",
+        "\n",
+        "print(\"updateNote.ts created.\")"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "8swKkSAtnlyD",
+        "outputId": "b3414fb0-8b24-4fdb-ee58-4f2099a182e2"
+      },
+      "execution_count": 6,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "updateNote.ts created.\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "list_notes = \"\"\"\n",
+        "import { db } from '@/lib/firebase';\n",
+        "import {\n",
+        "  collection,\n",
+        "  query,\n",
+        "  orderBy,\n",
+        "  onSnapshot,\n",
+        "} from 'firebase/firestore';\n",
+        "\n",
+        "export function watchNotes(uid: string, cb: (docs: any[]) => void) {\n",
+        "  const q = query(\n",
+        "    collection(db, `users/${uid}/notes`),\n",
+        "    orderBy('updatedAt', 'desc')\n",
+        "  );\n",
+        "\n",
+        "  return onSnapshot(q, (snap) =>\n",
+        "    cb(\n",
+        "      snap.docs.map((d) => ({\n",
+        "        id: d.id,\n",
+        "        ...d.data(),\n",
+        "      }))\n",
+        "    )\n",
+        "  );\n",
+        "}\n",
+        "\"\"\"\n",
+        "\n",
+        "with open(\"notes-app/services/listNotes.ts\", \"w\") as f:\n",
+        "    f.write(list_notes)\n",
+        "\n",
+        "print(\"listNotes.ts created.\")"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "n4vrRfu7nrmb",
+        "outputId": "9454c033-6578-4082-fff8-df931310006b"
+      },
+      "execution_count": 7,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "listNotes.ts created.\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "dashboard_page = \"\"\"\n",
+        "'use client';\n",
+        "\n",
+        "import { useEffect, useState } from 'react';\n",
+        "import { auth } from '@/lib/firebase';\n",
+        "import { watchNotes } from '@/services/listNotes';\n",
+        "\n",
+        "export default function Dashboard() {\n",
+        "  const [notes, setNotes] = useState<any[]>([]);\n",
+        "\n",
+        "  useEffect(() => {\n",
+        "    if (!auth.currentUser) return;\n",
+        "\n",
+        "    return watchNotes(auth.currentUser.uid, setNotes);\n",
+        "  }, []);\n",
+        "\n",
+        "  return (\n",
+        "    <div className=\"p-6\">\n",
+        "      <h1 className=\"mb-4 text-3xl font-bold\">\n",
+        "        My Notes\n",
+        "      </h1>\n",
+        "\n",
+        "      <div className=\"grid gap-4\">\n",
+        "        {notes.map((note) => (\n",
+        "          <div\n",
+        "            key={note.id}\n",
+        "            className=\"rounded border p-4\"\n",
+        "          >\n",
+        "            <h2 className=\"text-xl font-semibold\">\n",
+        "              {note.title}\n",
+        "            </h2>\n",
+        "\n",
+        "            <p>{note.body}</p>\n",
+        "          </div>\n",
+        "        ))}\n",
+        "      </div>\n",
+        "    </div>\n",
+        "  );\n",
+        "}\n",
+        "\"\"\"\n",
+        "\n",
+        "with open(\"notes-app/app/dashboard/page.tsx\", \"w\") as f:\n",
+        "    f.write(dashboard_page)\n",
+        "\n",
+        "print(\"Dashboard page created.\")"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "iTHP2ILKnwwz",
+        "outputId": "fb2b6472-2659-43f1-915c-2fe55436cf9a"
+      },
+      "execution_count": 8,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Dashboard page created.\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "firestore_rules = \"\"\"\n",
+        "rules_version = '2';\n",
+        "\n",
+        "service cloud.firestore {\n",
+        "  match /databases/{database}/documents {\n",
+        "\n",
+        "    function isSignedIn() {\n",
+        "      return request.auth != null;\n",
+        "    }\n",
+        "\n",
+        "    function isOwner(uid) {\n",
+        "      return isSignedIn() && request.auth.uid == uid;\n",
+        "    }\n",
+        "\n",
+        "    match /users/{uid} {\n",
+        "\n",
+        "      allow read, write: if isOwner(uid);\n",
+        "\n",
+        "      match /notes/{noteId} {\n",
+        "\n",
+        "        allow create: if isOwner(uid);\n",
+        "\n",
+        "        allow read, update, delete:\n",
+        "          if isOwner(uid)\n",
+        "          ||\n",
+        "          (\n",
+        "            resource.data.shared == true\n",
+        "            &&\n",
+        "            request.time < resource.data.shareExpiresAt\n",
+        "          );\n",
+        "      }\n",
+        "    }\n",
+        "  }\n",
+        "}\n",
+        "\"\"\"\n",
+        "\n",
+        "with open(\"notes-app/firestore.rules\", \"w\") as f:\n",
+        "    f.write(firestore_rules)\n",
+        "\n",
+        "print(\"firestore.rules created.\")"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "nuW_-agqn_2k",
+        "outputId": "e05cc240-34a8-478a-ae28-d7058c3cb5cb"
+      },
+      "execution_count": 9,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "firestore.rules created.\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "env_local = \"\"\"\n",
+        "NEXT_PUBLIC_FIREBASE_API_KEY=\n",
+        "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=\n",
+        "NEXT_PUBLIC_FIREBASE_PROJECT_ID=\n",
+        "\"\"\"\n",
+        "\n",
+        "with open(\"notes-app/.env.local\", \"w\") as f:\n",
+        "    f.write(env_local)\n",
+        "\n",
+        "print(\".env.local created.\")"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "2NmGqtkBojTg",
+        "outputId": "c10ba388-830b-45da-b31f-5a37c5f211ff"
+      },
+      "execution_count": 10,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            ".env.local created.\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import shutil\n",
+        "\n",
+        "shutil.make_archive(\"notes-app\", \"zip\", \"notes-app\")\n",
+        "\n",
+        "print(\"ZIP file created successfully.\")"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "290xd4HqotRS",
+        "outputId": "6f2c8786-9e65-4a14-9e36-86984928e9a4"
+      },
+      "execution_count": 11,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "ZIP file created successfully.\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from google.colab import files\n",
+        "\n",
+        "files.download(\"notes-app.zip\")"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 17
+        },
+        "id": "XPLXjpmZoweF",
+        "outputId": "713e30b2-f6c0-46bf-9e99-d82a9c1a680b"
+      },
+      "execution_count": 12,
+      "outputs": [
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ],
+            "application/javascript": [
+              "\n",
+              "    async function download(id, filename, size) {\n",
+              "      if (!google.colab.kernel.accessAllowed) {\n",
+              "        return;\n",
+              "      }\n",
+              "      const div = document.createElement('div');\n",
+              "      const label = document.createElement('label');\n",
+              "      label.textContent = `Downloading \"${filename}\": `;\n",
+              "      div.appendChild(label);\n",
+              "      const progress = document.createElement('progress');\n",
+              "      progress.max = size;\n",
+              "      div.appendChild(progress);\n",
+              "      document.body.appendChild(div);\n",
+              "\n",
+              "      const buffers = [];\n",
+              "      let downloaded = 0;\n",
+              "\n",
+              "      const channel = await google.colab.kernel.comms.open(id);\n",
+              "      // Send a message to notify the kernel that we're ready.\n",
+              "      channel.send({})\n",
+              "\n",
+              "      for await (const message of channel.messages) {\n",
+              "        // Send a message to notify the kernel that we're ready.\n",
+              "        channel.send({})\n",
+              "        if (message.buffers) {\n",
+              "          for (const buffer of message.buffers) {\n",
+              "            buffers.push(buffer);\n",
+              "            downloaded += buffer.byteLength;\n",
+              "            progress.value = downloaded;\n",
+              "          }\n",
+              "        }\n",
+              "      }\n",
+              "      const blob = new Blob(buffers, {type: 'application/binary'});\n",
+              "      const a = document.createElement('a');\n",
+              "      a.href = window.URL.createObjectURL(blob);\n",
+              "      a.download = filename;\n",
+              "      div.appendChild(a);\n",
+              "      a.click();\n",
+              "      div.remove();\n",
+              "    }\n",
+              "  "
+            ]
+          },
+          "metadata": {}
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ],
+            "application/javascript": [
+              "download(\"download_2ade6e5a-84e8-4410-a8e7-328a279e8651\", \"notes-app.zip\", 3910)"
+            ]
+          },
+          "metadata": {}
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [],
+      "metadata": {
+        "id": "qr3HGsQItDL8"
+      },
+      "execution_count": null,
+      "outputs": []
+    }
+  ]
+}
